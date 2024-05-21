@@ -1,7 +1,7 @@
 .letter {
-    width: 150px;
+    width: 80px;
     /* Adjust the width of the rectangle */
-    height: 200px;
+    height: 100px;
     /* Adjust the height of the rectangle */
     border: 2px solid black;
     /* Border style */
@@ -9,6 +9,6 @@
     justify-content: center;
     align-items: center;
     color: white;
-    font-size: 200px;
+    font-size: 100px;
     /* Adjust font size of the character */
 }
