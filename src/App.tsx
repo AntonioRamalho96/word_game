@@ -84,6 +84,11 @@ function App() {
     }
   };
 
+  const handleKeyPress = (event : any) => {
+    if (event.key === 'Enter') 
+      handleSubmit();
+  };
+
 
   return (
     <>
@@ -93,6 +98,7 @@ function App() {
         type="text"
         value={inputText}
         onChange={handleChange}
+        onKeyDownCapture={handleKeyPress}
         placeholder="Enter your guess"
       />
         <button onClick={() => handleSubmit()}>
