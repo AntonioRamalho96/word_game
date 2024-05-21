@@ -1,0 +1,14 @@
+.letter {
+    width: 150px;
+    /* Adjust the width of the rectangle */
+    height: 200px;
+    /* Adjust the height of the rectangle */
+    border: 2px solid black;
+    /* Border style */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 200px;
+    /* Adjust font size of the character */
+}
