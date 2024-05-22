@@ -30,14 +30,6 @@ class LetterInfo:
         self.letter = letter
         self.status = status
 
-
-def findFirstAndRemove(remaining_letters : list, char : str):
-    is_present = (char in remaining_letters)
-    if is_present:
-        remaining_letters.remove(char)
-    return is_present
-        
-
 def to_letters(input : str):
     result = [LetterInfo(input[i],LetterStatus.ABSENT) for i in range(5)]
     remaining_letters = [char for char in answer]

@@ -4,6 +4,8 @@ import Letter from './Letter.tsx'
 import './Letter.css'
 import LetterStatus from './LetterStatus.tsx'
 import LetterProps from './LetterProps.tsx'
+import valid_words from './valid_words.ts'
+import validateWord from './Backend.ts'
 
 
 function GetEmptyRow() : LetterProps[]
@@ -18,70 +20,86 @@ function GetEmptyBoard() : LetterProps[][]
   return result;
 }
 
-function GetRequestInfo(input : string) : RequestInit
-{
-  const request_info = {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ text: input})
-  };
-
-  return request_info;
-}
-
-function ConvertResult(data : any, board : LetterProps[][])
+function ConvertResult(attempt : number, data : LetterProps[], board : LetterProps[][])
 {
   // Converts the status in each element of the array 
   // from string to the enum value
-  let letter_aray : any[] = data.result;
-  const converted = letter_aray.map(item => {
-    item.status = LetterStatus[item.status];
-    return item;
-  });
-
   const nextBoard = board.map((row, idx) => {
-    if (idx === data.attempt - 1)
-      return converted;
+    if (idx === attempt)
+      return data;
     else
       return row;
   });
 
   return nextBoard;
-
 }
 
+
+function isVictory(latest_attempt : LetterProps[]) : boolean
+{
+  for(const letter of latest_attempt)
+    if(letter.status != LetterStatus.CORRECT)
+      return false;
+
+  return true;
+}
 
 function App() {
   const [letterInfo, setLetterInfo] = useState(GetEmptyBoard());
   const [inputText, setInputText] = useState('');
+  const [attempt, setAttempt] = useState(0);
+  const [answer, setAnswer] = useState(valid_words[Math.floor(Math.random() * valid_words.length)]);
+  const [status, setStatus] = useState("Good luck!");
+  const [won, setWon] = useState(false);
 
   const handleChange = (event : ChangeEvent<HTMLInputElement>) => {
     setInputText(event.target.value);
   };
 
   const handleSubmit = async () => {
+    if(attempt === 6 || won)
+    {
+      return;
+    }
 
-    const address = 'http://localhost:5000/check';
-    try {
-      const response = await fetch(address, GetRequestInfo(inputText));
-      const data = await response.json();
-      if(!response.ok)
-        console.log(data.error)
-      setLetterInfo(ConvertResult(data, letterInfo));
-    } catch (error) {
-      console.log("Error")
+    const response = validateWord(answer, inputText);
+    if(response.length === 5)
+    {
+      console.log("Valid word");
+      const new_board =  ConvertResult(attempt, response, letterInfo); 
+      setLetterInfo(new_board);
+      setAttempt(attempt + 1);
+      setInputText("");
+
+      if(isVictory(new_board[attempt]))
+      {
+        setWon(true);
+        setStatus("Congratulations!");
+        return;
+      }
+
+      if(attempt === 5)
+      {
+        setStatus("Oh no! The answer was: " + answer);
+        return;
+      }
+
+      setStatus("Keep trying :) ");
+      
+    }
+    else 
+    {
+      setStatus("Invalid word!");
     }
   };
 
   const handleReset = async () => {
 
-    const address = 'http://localhost:5000/reset';
-    try {
-      await fetch(address);
-      setLetterInfo(GetEmptyBoard());
-    } catch (error) {
-      console.log("Error")
-    }
+    setAnswer(valid_words[Math.floor(Math.random() * valid_words.length)]);
+    setAttempt(0);
+    setLetterInfo(GetEmptyBoard());
+    setStatus("Good luck!");
+    setWon(false);
   };
 
   const handleKeyPress = (event : any) => {
@@ -105,13 +123,16 @@ function App() {
           Submit
         </button>
         <button onClick={() => handleReset()}>
-          Reset
+          New Word
         </button>
       </div>
+      <div>
+        {status}
+      </div>
 
-         { letterInfo.map((row) => (
-
-           <div className='container'>
+         { letterInfo.map((row, row_idx) => (
+           
+           <div key={row_idx} className='container'>
               {row.map((letter, index) => (
                 <div key={index} className='componentWrapper'>
                   <Letter {...letter}></Letter>
