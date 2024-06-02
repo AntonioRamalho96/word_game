@@ -1,4 +1,4 @@
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useEffect, useRef, useState } from 'react'
 import './App.css'
 import Letter from './Letter.tsx'
 import './Letter.css'
@@ -8,20 +8,17 @@ import valid_words from './valid_words.ts'
 import validateWord from './Backend.ts'
 
 
-function GetEmptyRow() : LetterProps[]
-{
-  const result = Array(5).fill({letter : '', status : LetterStatus.NOT_SET});
+function GetEmptyRow(): LetterProps[] {
+  const result = Array(5).fill({ letter: '', status: LetterStatus.NOT_SET });
   return result;
 }
 
-function GetEmptyBoard() : LetterProps[][]
-{
+function GetEmptyBoard(): LetterProps[][] {
   const result = Array(6).fill(GetEmptyRow());
   return result;
 }
 
-function ConvertResult(attempt : number, data : LetterProps[], board : LetterProps[][])
-{
+function ConvertResult(attempt: number, data: LetterProps[], board: LetterProps[][]) {
   // Converts the status in each element of the array 
   // from string to the enum value
   const nextBoard = board.map((row, idx) => {
@@ -34,61 +31,109 @@ function ConvertResult(attempt : number, data : LetterProps[], board : LetterPro
   return nextBoard;
 }
 
+function modifyBoard(board: LetterProps[][], row: number, col: number, txt: string) {
+  const nextBoard: LetterProps[][] = JSON.parse(JSON.stringify(board));
 
-function isVictory(latest_attempt : LetterProps[]) : boolean
-{
-  for(const letter of latest_attempt)
-    if(letter.status != LetterStatus.CORRECT)
+  nextBoard[row][col].letter = txt.toUpperCase();
+
+  return nextBoard;
+
+}
+
+function getString(board: LetterProps[][], row: number) {
+  let result = "";
+  for (let i = 0; i < 5; i++)
+    result += board[row][i].letter;
+  return result;
+}
+
+
+function isVictory(latest_attempt: LetterProps[]): boolean {
+  for (const letter of latest_attempt)
+    if (letter.status != LetterStatus.CORRECT)
       return false;
 
   return true;
 }
 
 function App() {
-  const [letterInfo, setLetterInfo] = useState(GetEmptyBoard());
-  const [inputText, setInputText] = useState('');
-  const [attempt, setAttempt] = useState(0);
+
   const [answer, setAnswer] = useState(valid_words[Math.floor(Math.random() * valid_words.length)]);
+  const [letterInfo, setLetterInfo] = useState(GetEmptyBoard());
+
+
+  const [attempt, setAttempt] = useState(0);
+  const [cursor, setCursor] = useState(0);
+
   const [status, setStatus] = useState("Good luck!");
   const [won, setWon] = useState(false);
 
-  const handleChange = (event : ChangeEvent<HTMLInputElement>) => {
-    setInputText(event.target.value);
-  };
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // If the key is a letter
+    if (e.key.length === 1 && e.key >= 'a' && e.key <= 'z' && cursor < 5) {
+      const modified_board = modifyBoard(letterInfo, attempt, cursor, e.key);
+      setLetterInfo(modified_board);
+      setCursor(cursor + 1);
+    }
+
+    // If the user pressed Backspace
+    if (e.key == 'Backspace' && cursor > 0) {
+
+      setLetterInfo(modifyBoard(letterInfo, attempt, cursor - 1, ''));
+      setCursor(cursor - 1);
+    }
+
+    // If the user pressed ENTER
+    if (e.key == 'Enter' && cursor == 5) {
+      handleSubmit();
+    }
+  }
+
+  useEffect(() => {
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    // Don't forget to clean up
+    return function cleanup() {
+      document.removeEventListener('keydown', handleKeyDown);
+    }
+  });
+
 
   const handleSubmit = async () => {
-    if(attempt === 6 || won)
-    {
+    if (attempt === 6 || won) {
       return;
     }
 
-    const response = validateWord(answer, inputText);
-    if(response.length === 5)
-    {
+    const input_word = getString(letterInfo, attempt);
+
+    const response = validateWord(answer, input_word);
+    if (response.length === 5) {
       console.log("Valid word");
-      const new_board =  ConvertResult(attempt, response, letterInfo); 
+      const new_board = ConvertResult(attempt, response, letterInfo);
+
       setLetterInfo(new_board);
       setAttempt(attempt + 1);
-      setInputText("");
+      setCursor(0);
 
-      if(isVictory(new_board[attempt]))
-      {
+      if (isVictory(new_board[attempt])) {
         setWon(true);
         setStatus("Congratulations!");
         return;
       }
 
-      if(attempt === 5)
-      {
+      if (attempt === 5) {
         setStatus("Oh no! The answer was: " + answer);
         return;
       }
 
       setStatus("Keep trying :) ");
-      
+
     }
-    else 
-    {
+    else {
       setStatus("Invalid word!");
     }
   };
@@ -96,50 +141,42 @@ function App() {
   const handleReset = async () => {
 
     setAnswer(valid_words[Math.floor(Math.random() * valid_words.length)]);
-    setAttempt(0);
     setLetterInfo(GetEmptyBoard());
+
+    setAttempt(0);
+    setCursor(0);
+
     setStatus("Good luck!");
     setWon(false);
-  };
 
-  const handleKeyPress = (event : any) => {
-    if (event.key === 'Enter') 
-      handleSubmit();
+    // Prevent the scope to stick to this button
+    if (buttonRef.current) {
+      buttonRef.current.blur();
+    }
   };
-
 
   return (
     <>
-    <div>
 
-      <input
-        type="text"
-        value={inputText}
-        onChange={handleChange}
-        onKeyDownCapture={handleKeyPress}
-        placeholder="Enter your guess"
-      />
-        <button onClick={() => handleSubmit()}>
-          Submit
-        </button>
-        <button onClick={() => handleReset()}>
-          New Word
-        </button>
-      </div>
+
+
+      <button ref={buttonRef} onClick={() => handleReset()}>
+        New Word
+      </button>
       <div>
         {status}
       </div>
 
-         { letterInfo.map((row, row_idx) => (
-           
-           <div key={row_idx} className='container'>
-              {row.map((letter, index) => (
-                <div key={index} className='componentWrapper'>
-                  <Letter {...letter}></Letter>
-                </div>
-              ))}
+      {letterInfo.map((row, row_idx) => (
+
+        <div key={row_idx} className='container'>
+          {row.map((letter, index) => (
+            <div key={index} className='componentWrapper'>
+              <Letter {...letter}></Letter>
             </div>
           ))}
+        </div>
+      ))}
     </>
   )
 }

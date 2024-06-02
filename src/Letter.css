@@ -8,7 +8,6 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    color: white;
     font-size: 100px;
     /* Adjust font size of the character */
 }

@@ -9,7 +9,7 @@ class Letter extends React.Component<LetterProps>
 {
 
     render(): React.ReactNode {
-        return <div className="letter" style={{backgroundColor: this.getColor()}}>
+        return <div className="letter" style={{backgroundColor: this.getColor(), color: this.getLetterColor()}}>
             {this.props.letter}
         </div >
     }
@@ -27,6 +27,13 @@ class Letter extends React.Component<LetterProps>
             default:
                 return 'white';
         }
+    }
+
+    getLetterColor() : string{
+        if (LetterStatus.NOT_SET == this.props.status)
+            return "black";
+        else
+            return "white";
     }
 }
 
