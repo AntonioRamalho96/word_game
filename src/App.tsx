@@ -188,6 +188,7 @@ function App() {
           width: 0,
           border: 'none'
         }}
+        autoFocus
       />
 
       {
