@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { KeyboardEventHandler, useEffect, useRef, useState } from 'react'
 import './App.css'
 import Letter from './Letter.tsx'
 import './Letter.css'
@@ -69,9 +69,10 @@ function App() {
   const [won, setWon] = useState(false);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     // If the key is a letter
     if (e.key.length === 1 && e.key >= 'a' && e.key <= 'z' && cursor < 5) {
       const modified_board = modifyBoard(letterInfo, attempt, cursor, e.key);
@@ -92,15 +93,22 @@ function App() {
     }
   }
 
+  const handleBlur = () => {
+    console.log("Handle blur")
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 0);
+  };
+
+
   useEffect(() => {
-
-    document.addEventListener('keydown', handleKeyDown);
-
-    // Don't forget to clean up
-    return function cleanup() {
-      document.removeEventListener('keydown', handleKeyDown);
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
-  });
+
+  }, []);
 
 
   const handleSubmit = async () => {
@@ -150,9 +158,8 @@ function App() {
     setWon(false);
 
     // Prevent the scope to stick to this button
-    if (buttonRef.current) {
-      buttonRef.current.blur();
-    }
+    buttonRef.current?.blur();
+    inputRef.current?.focus();
   };
 
   return (
@@ -167,16 +174,34 @@ function App() {
         {status}
       </div>
 
-      {letterInfo.map((row, row_idx) => (
+      <input
+        ref={inputRef}
+        type="text"
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
+        style={{
+          position: 'absolute',
+          top: '-1000px',
+          left: '-1000px',
+          opacity: 0,
+          height: 0,
+          width: 0,
+          border: 'none'
+        }}
+      />
 
-        <div key={row_idx} className='container'>
-          {row.map((letter, index) => (
-            <div key={index} className='componentWrapper'>
-              <Letter {...letter}></Letter>
-            </div>
-          ))}
-        </div>
-      ))}
+      {
+        letterInfo.map((row, row_idx) => (
+
+          <div key={row_idx} className='container'>
+            {row.map((letter, index) => (
+              <div key={index} className='componentWrapper'>
+                <Letter {...letter}></Letter>
+              </div>
+            ))}
+          </div>
+        ))
+      }
     </>
   )
 }
