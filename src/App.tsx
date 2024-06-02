@@ -181,14 +181,10 @@ function App() {
         onBlur={handleBlur}
         style={{
           position: 'absolute',
-          top: '-1000px',
-          left: '-1000px',
-          opacity: 0,
-          height: 0,
-          width: 0,
+          top: '0',
+          left: '0',
           border: 'none'
         }}
-        autoFocus
       />
 
       {
